@@ -2,17 +2,9 @@ pragma solidity ^0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ICampaignManager, Campaign} from "./interfaces/ICampaignManager.sol";
 
-struct Campaign {
-    uint256 id;
-    string name;
-    uint256 target;
-    uint256 raised;
-    address receiver;
-    uint256 deadline;
-}
-
-contract CampaignManager {
+contract CampaignManager is ICampaignManager {
     using SafeERC20 for IERC20;
 
     mapping(address => uint256) public organizerCampaignIds;
@@ -24,7 +16,7 @@ contract CampaignManager {
         acceptToken = token;
     }
 
-    function allCampaigns() public view returns (Campaign[] memory) {
+    function allCampaigns() external view returns (Campaign[] memory) {
         return campaigns;
     }
 
