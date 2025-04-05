@@ -1,4 +1,4 @@
-# Crowdera: ZK-Enhanced Event Funding Platform
+# Crowdera: Anonymous funding event Platform
 
 ![Anonymous Donations with Maximum Cap](./cover.png)
 
