@@ -18,7 +18,7 @@ contract CampaignManager {
     mapping(address => uint256) public organizerCampaignIds;
     mapping(uint256 => Campaign) public campaignFromId;
     Campaign[] public campaigns;
-    address acceptToken;
+    address public acceptToken;
 
     constructor(address token) {
         acceptToken = token;
@@ -45,6 +45,6 @@ contract CampaignManager {
         require(receivedAmount > 0, "No tokens received");
         Campaign memory campaign = campaignFromId[campaignId];
         uint256 amountAfter = campaign.raised + receivedAmount;
-        require(amountAfter < campaign.target, "Target Reached");
+        require(amountAfter <= campaign.target, "Target Reached");
     }
 }
