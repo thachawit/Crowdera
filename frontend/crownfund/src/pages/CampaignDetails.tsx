@@ -40,6 +40,8 @@ export function CampaignDetails() {
   const [donations, setDonations] = useState(
     mockDonationEvents.filter((d) => d.campaignId === Number(id))
   );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Simulate Webhook updates (mocked)
   useEffect(() => {
@@ -57,15 +59,24 @@ export function CampaignDetails() {
 
   const handleDonate = () => {
     if (!donationAmount) return;
-    const newDonation = {
-      campaignId: Number(id),
-      donor: "0xmockuser...",
-      amount: (Number(donationAmount) * 1e6).toString(), // Convert USDT to 6-decimal units
-      timestamp: new Date().toISOString(),
-    };
-    setDonations((prev) => [...prev, newDonation]);
-    setDonationAmount("");
-    // TODO: Call MultiBaas REST API to transfer USDT on Zircuit testnet
+    setLoading(true);
+    setError(null);
+    try {
+      const newDonation = {
+        campaignId: Number(id),
+        donor: "0xmockuser...",
+        amount: (Number(donationAmount) * 1e6).toString(), // Convert USDT to 6-decimal units
+        timestamp: new Date().toISOString(),
+      };
+      setDonations((prev) => [...prev, newDonation]);
+      setDonationAmount("");
+      // TODO: Call MultiBaas REST API to transfer USDT on Zircuit testnet
+    } catch (error) {
+      console.error("Donation error:", error);
+      setError("Failed to process donation");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!campaign)
@@ -330,6 +341,11 @@ export function CampaignDetails() {
 
             <CardContent className="pt-6">
               <div className="space-y-6">
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm">
+                    {error}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label
                     htmlFor="amount"
@@ -345,6 +361,7 @@ export function CampaignDetails() {
                       value={donationAmount}
                       onChange={(e) => setDonationAmount(e.target.value)}
                       className="pl-8"
+                      disabled={loading}
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                       $
@@ -360,6 +377,7 @@ export function CampaignDetails() {
                       size="sm"
                       className="flex-1"
                       onClick={() => setDonationAmount(amount.toString())}
+                      disabled={loading}
                     >
                       ${amount}
                     </Button>
@@ -380,9 +398,9 @@ export function CampaignDetails() {
               <Button
                 onClick={handleDonate}
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                disabled={!donationAmount}
+                disabled={!donationAmount || loading}
               >
-                Donate Now
+                {loading ? "Processing..." : "Donate Now"}
               </Button>
             </CardFooter>
           </Card>

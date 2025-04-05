@@ -3,10 +3,10 @@ export const mockCampaigns = [
     id: 1,
     name: "Taipei Music Fest",
     goal: "1000000000", // 1000 USDT (1e9 units, 6 decimals = 1000 USDT)
-    totalRaised: "600000000", // 600 USDT
+    totalRaised: "100000000", // 600 USDT
     organizer: "0x5678...",
     chainBreakdown: {
-      zircuit: "500000000", // 500 USDT
+      zircuit: "100000000", // 500 USDT
     },
   },
   {
