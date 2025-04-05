@@ -3,14 +3,15 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {CampaignManager, Campaign} from "../src/CampaignManager.sol";
-import {DonateImpl} from "../src/DonateImpl.sol";
+import {BatchCallAndSponsor} from "../src/BatchCallAndSponsor.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {Vm} from "forge-std/Vm.sol";
 
 contract CounterTest is Test {
     CampaignManager public campaignManager;
-    DonateImpl public donateImpl;
+    BatchCallAndSponsor public implementation;
 
     address USDC = 0x3b952c8C9C44e8Fe201e2b26F6B2200203214cfF;
 
@@ -21,19 +22,24 @@ contract CounterTest is Test {
     address constant BOB = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
     uint256 constant BOB_PK = 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a;
 
+    address constant RECEIVIER = address(0x43C31);
+
     // address public constant ALICE = address(0xBEEF);
 
     function setUp() public {
-        string memory url = vm.rpcUrl("zircuit_testnet");
-        vm.createSelectFork(url);
+        // string memory url = vm.rpcUrl("zircuit_testnet");
+        vm.createSelectFork("zircuit_testnet");
         campaignManager = new CampaignManager(USDC);
-        donateImpl = new DonateImpl(address(campaignManager));
+        implementation = new BatchCallAndSponsor();
+        // donateImpl = new DonateImpl(address(campaignManager), BOB);
     }
 
     function test_donate() public {
+        vm.startPrank(RECEIVIER);
         uint256 donateAmount = 100;
         Campaign memory newCampaign =
             campaignManager.createCampaign("Test Campaign", donateAmount, block.timestamp + 100);
+        vm.stopPrank();
 
         // get campaign
         Campaign[] memory campaigns = campaignManager.allCampaigns();
@@ -45,7 +51,7 @@ contract CounterTest is Test {
         console.log(IERC20(USDC).balanceOf(ALICE));
 
         // Alice signs a delegation allowing `implementation` to execute transactions on her behalf.
-        Vm.SignedDelegation memory signedDelegation = vm.signDelegation(address(donateImpl), ALICE_PK);
+        Vm.SignedDelegation memory signedDelegation = vm.signDelegation(address(implementation), ALICE_PK);
         vm.stopPrank();
 
         // Bob attaches the signed delegation from Alice and broadcasts it.
@@ -57,10 +63,41 @@ contract CounterTest is Test {
         require(code.length > 0, "no code written to Alice");
         vm.stopBroadcast();
 
+        // batch transactions and sign
+        console.log("Sending 1 ETH from Alice to Bob and transferring 100 tokens to Bob in a single transaction");
+        BatchCallAndSponsor.Call[] memory calls = new BatchCallAndSponsor.Call[](2);
+
+        // USDT transfer
+        calls[0] = BatchCallAndSponsor.Call({
+            to: USDC,
+            value: 0,
+            data: abi.encodeCall(IERC20.transfer, (address(campaignManager), 100))
+        });
+
+        // Donate
+        calls[1] = BatchCallAndSponsor.Call({
+            to: address(campaignManager),
+            value: 0,
+            data: abi.encodeCall(CampaignManager.donate, (newCampaign.id, 100))
+        });
+
+        bytes memory encodedCalls = "";
+        for (uint256 i = 0; i < calls.length; i++) {
+            encodedCalls = abi.encodePacked(encodedCalls, calls[i].to, calls[i].value, calls[i].data);
+        }
+
+        // Prepare the signature for the transaction.
+        bytes32 digest = keccak256(abi.encodePacked(BatchCallAndSponsor(ALICE).nonce(), encodedCalls));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ALICE_PK, MessageHashUtils.toEthSignedMessageHash(digest));
+
+        bytes memory signature = abi.encodePacked(r, s, v);
+
         // try call alice from BOB
-        // TODO: implement check signature on donate impl contract
         vm.startPrank(BOB);
-        DonateImpl(ALICE).donate(campaignManager, newCampaign.id, newCampaign.reciever, donateAmount);
+        BatchCallAndSponsor(ALICE).execute(calls, signature);
         vm.stopPrank();
+
+        assertEq(IERC20(USDC).balanceOf(ALICE), 0);
+        assertEq(IERC20(USDC).balanceOf(RECEIVIER), donateAmount);
     }
 }

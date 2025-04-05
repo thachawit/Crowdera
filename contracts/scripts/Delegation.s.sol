@@ -5,7 +5,7 @@ contract DelegationScript is Script {
     function run() public {
         vm.startBroadcast();
         Delegation delegation = new Delegation();
-        console.log(address(delegation));
+        // console.log(address(delegation));
         vm.stopBroadcast();
     }
 }

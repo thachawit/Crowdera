@@ -8,7 +8,7 @@ struct Campaign {
     string name;
     uint256 target;
     uint256 raised;
-    address reciever;
+    address receiver;
     uint256 deadline;
 }
 
@@ -34,17 +34,18 @@ contract CampaignManager {
     {
         uint256 id = uint256(keccak256(abi.encodePacked(msg.sender, name, targetAmount, deadline)));
         newCampaign =
-            Campaign({id: id, name: name, target: targetAmount, raised: 0, reciever: msg.sender, deadline: deadline});
+            Campaign({id: id, name: name, target: targetAmount, raised: 0, receiver: msg.sender, deadline: deadline});
         campaigns.push(newCampaign);
         organizerCampaignIds[msg.sender] = id;
         campaignFromId[id] = newCampaign;
     }
 
-    function donateProxy(uint256 campaignId, address receiver, uint256 amount) external {
-        uint256 receivedAmount = IERC20(acceptToken).balanceOf(address(this));
-        require(receivedAmount > 0, "No tokens received");
+    function donate(uint256 campaignId, uint256 amount) external {
         Campaign memory campaign = campaignFromId[campaignId];
-        uint256 amountAfter = campaign.raised + receivedAmount;
+        uint256 amountAfter = campaign.raised + IERC20(acceptToken).balanceOf(address(this));
+        // check if the target has been reached
         require(amountAfter <= campaign.target, "Target Reached");
+        // send to the receiver
+        IERC20(acceptToken).safeTransfer(campaign.receiver, amount);
     }
 }
