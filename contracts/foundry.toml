@@ -7,4 +7,5 @@ fs_permissions = [{ access = "read-write", path = "./" }]
 
 [rpc_endpoints]
 zircuit = "https://zircuit-mainnet.drpc.org"
+zircuit_testnet = "https://garfield-testnet.zircuit.com/"
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
