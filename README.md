@@ -2,7 +2,7 @@
 
 ![Anonymous Donations with Maximum Cap](./cover.png)
 
-> **A privacy-preserving donation platform that prevents over-funding of causes by using zero-knowledge proofs on Zircuit with transparent goal tracking and MultiBaas deployment.**
+> **A privacy-preserving donation platform that prevents over-funding of causes by using zero-knowledge proofs on Zircuit and rewards donors with commemorative NFT badges on Flow.**
 
 ## Table of Contents
 
@@ -12,6 +12,7 @@
 - [Setup & Testing](#setup--testing)
 - [Experience & Feedback](#experience--feedback)
 - [Demo](#demo)
+- [Future Roadmap](#future-roadmap)
 - [Repository Structure](#repository-structure)
 
 ## Overview
@@ -32,40 +33,45 @@ We integrated Zircuit's EIP-7702 (account abstraction) to implement zero-knowled
 - Leveraged Zircuit's account abstraction for seamless wallet interactions, providing a smooth user experience while preserving privacy
 - Integrated a refund mechanism for cases where funds need to be returned, maintaining the same privacy guarantees
 
-### MultiBaas Integration
+Our ZK implementation uses a custom circuit design that verifies donation legitimacy without revealing donor identity. The donation flow works as follows:
 
-We utilized Curvegrid's MultiBaas for deployment and management of our smart contracts:
+1. User selects a campaign and donation amount
+2. System generates a ZK proof that validates the donation without revealing the donor
+3. Smart contract verifies the proof and accepts the donation
+4. If the donation would exceed the campaign's goal, it automatically accepts only what's needed and refunds the rest
 
-- Deployed and managed our core campaign smart contracts through MultiBaas
-- Used MultiBaas API for contract interaction, particularly for the campaign creation and fund withdrawal functions
-- Leveraged MultiBaas's simplified deployment process to quickly iterate on our contracts during development
-- Utilized MultiBaas's contract management features to monitor and debug transactions
-- Implemented real-time notification system for campaign status updates using MultiBaas webhooks
+### Flow Integration
+
+We utilized the Flow blockchain to create and distribute commemorative NFT badges to donors:
+
+- Implemented a Flow smart contract that mints unique NFT badges for successful donations
+- Created a secure bridge between Zircuit (for anonymous donations) and Flow (for NFT rewards)
+- Designed a system that preserves donor privacy while still enabling them to receive their NFT badges
+- Used Flow's efficient resource-oriented programming model to create a gas-efficient NFT minting process
+- Implemented various badge designs that reflect different donation levels and campaigns
+
+The Flow integration works as follows:
+
+1. When a donation is successfully processed on Zircuit, a cryptographic proof is generated
+2. The donor can use this proof to claim their NFT badge on Flow without revealing their identity
+3. The badge serves as both a commemoration of their donation and proof of participation
+4. Each badge contains metadata about the campaign but not the donor's identity or donation amount
 
 ## Team
 
-Introduce your team members and their backgrounds/roles in the project.
-
-| Name                 | Role                          | Background               | Social Handles                                                                  |
-| -------------------- | ----------------------------- | ------------------------ | ------------------------------------------------------------------------------- |
-| Pawee Tantivasdakarn | Lead Smart Contract Developer | Blockchain developer     | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
-| Chirayu Charoenyos   | Frontend Developer            | React,NextJS, cs student | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
-| Thawinwit N.         | Backend Integration           | Backend Golang developer | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
+| Name                 | Role                          | Background                                             | Social Handles                                                                    |
+| -------------------- | ----------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Pawee Tantivasdakarn | Lead Smart Contract Developer | Blockchain developer with 3+ years ZK-proof experience | [GitHub](https://github.com/paweenthx) / [Twitter](https://twitter.com/paweenthx) |
+| Chirayu Charoenyos   | Frontend Developer            | React/NextJS specialist, Computer Science student      | [GitHub](https://github.com/chiracyou) / [Twitter](https://twitter.com/chiracyou) |
+| Thawinwit N.         | Backend Integration           | Golang developer with blockchain integration expertise | [GitHub](https://github.com/thawinwit) / [Twitter](https://twitter.com/thawinwit) |
 
 ## Setup & Testing
 
-### Prerequisites
-
-- Node.js v16+
-- Docker
-- MetaMask or compatible web3 wallet
-- Access to MultiBaas platform
-
-### Installation
+### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/zk-event-funding.git
+git clone https://github.com/paweenthx/zk-event-funding.git
 cd zk-event-funding
 
 # Install dependencies
@@ -73,22 +79,10 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your MultiBaas access credentials
+# Edit .env with your configuration settings
 ```
 
-### Running Tests
-
-```bash
-# Run the complete test suite
-npm test
-
-# Run tests for specific components
-npm test -- -t "campaign creation"
-npm test -- -t "zk donations"
-npm test -- -t "funding cap"
-```
-
-### Local Development
+### Development
 
 ```bash
 # Start the development server
@@ -103,8 +97,8 @@ npm run dev
 # Build the project
 npm run build
 
-# Deploy smart contracts using MultiBaas (requires configuration)
-npm run deploy:contracts
+# Deploy the web application
+npm run deploy
 ```
 
 ## Experience & Feedback
@@ -130,49 +124,74 @@ Working with Zircuit and implementing EIP-7702 for our ZK-secured donations was 
 
 Overall, Zircuit provided a solid foundation for our privacy-preserving donation system and would be recommended for projects requiring strong privacy guarantees with good UX.
 
-### MultiBaas Experience
+### Flow Experience
 
-Curvegrid's MultiBaas significantly streamlined our deployment and contract management process:
+Integrating with Flow blockchain for NFT badges was straightforward and efficient:
 
 **Wins:**
 
-- The deployment process was straightforward and saved considerable development time
-- Contract management interface made monitoring transactions and debugging easier
-- API integration was well-documented and simple to implement
-- The event monitoring capabilities helped us build a responsive UI that updates in real-time
-- The ability to quickly deploy updated contracts during development accelerated our iteration cycles
+- Cadence's resource-oriented programming model made implementing NFT logic intuitive
+- Flow's transaction model allowed for efficient batch minting of NFTs
+- Low transaction fees made issuing badges to all donors economically viable
+- Strong documentation and examples accelerated our development process
+- The Flow community provided helpful support when we encountered integration challenges
 
 **Challenges:**
 
-- More advanced features required deeper familiarity with the platform
-- Some custom functionality required workarounds
-- Initial setup required coordination between team members for access
+- Bridging between Zircuit and Flow while maintaining privacy guarantees required careful design
+- Implementing the cryptographic verification for anonymous badge claims took additional effort
+- Ensuring a smooth cross-chain user experience required extensive testing
 
-MultiBaas proved to be an excellent choice for rapid development during the hackathon, allowing us to focus on building core features rather than deployment logistics.
+Flow proved to be an excellent choice for our NFT badge system due to its efficiency, low costs, and developer-friendly environment.
 
 ## Demo
 
-[![Project Demo](demo_thumbnail_url_here)](your_video_url_here)
+Our demo showcases the complete user journey through the ZK-Enhanced Event Funding Platform:
+
+1. **Campaign Creation**: Watch an organizer create a new funding campaign with a specific goal
+2. **Anonymous Donations**: See how donors can contribute while maintaining privacy
+3. **Funding Cap in Action**: Witness the system automatically handle a donation that would exceed the funding goal
+4. **NFT Badge Minting**: Observe how donors receive their commemorative NFT badges on Flow without compromising their anonymity
+5. **Badge Collection**: See the different badge designs and how they showcase participation without revealing identity
+6. **Transparent Progress**: View real-time updates of campaign progress with complete anonymity for donors
+7. **Fund Withdrawal**: See how organizers can withdraw funds once the goal is met
+
+[![Project Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://youtu.be/YOUR_VIDEO_ID)
 
 _Click the image above to watch our demo video_
 
-Alternatively, you can view our [slide deck](slides_url_here).
+Our demo highlights the key innovations:
+
+- ZK-proof verification for anonymous donations
+- Automatic funding cap enforcement
+- Cross-chain NFT badge rewards on Flow
+- Privacy-preserving badge claiming mechanism
+- Smooth user experience through Zircuit's account abstraction
+
+## Future Roadmap
+
+While our hackathon submission demonstrates the core functionality, we plan to expand the platform with the following features:
+
+1. **Enhanced NFT Badges**: Implement tiered and evolving badges that change based on donation history
+2. **Verification System**: Implement a KYC system for campaign organizers to increase trust while maintaining donor privacy
+3. **Multi-Currency Support**: Accept donations in various tokens and stablecoins
+4. **Campaign Categories**: Add categorization for different types of donation needs (medical, education, disaster relief)
+5. **Mobile App**: Develop a dedicated mobile application for easier access
+6. **Integration with Traditional Payment Methods**: Allow donations via credit cards and bank transfers with the same privacy guarantees
+7. **Decentralized Governance**: Implement a community voting system for dispute resolution
 
 ## Repository Structure
 
 ```
 zk-event-funding/
-├── contracts/                     # Smart contracts
-│   ├── Campaign.sol               # Main campaign contract
-│   ├── ZKDonation.sol             # ZK donation implementation
-│   └── interfaces/                # Contract interfaces
-├── circuits/                      # ZK circuits for donation privacy
-│   ├── donation.circom            # Donation verification circuit
-│   └── scripts/                   # Circuit compilation scripts
-├── tests/                         # Test files
-│   ├── campaign.test.js           # Campaign contract tests
-│   ├── zkDonation.test.js         # ZK donation tests
-│   └── fundingCap.test.js         # Funding cap tests
+├── contracts/
+│   ├── zircuit/                   # Zircuit smart contracts
+│   │   ├── Campaign.sol           # Main campaign contract
+│   │   ├── ZKDonation.sol         # ZK donation implementation
+│   │   └── interfaces/            # Contract interfaces
+│   └── flow/                      # Flow smart contracts
+│       ├── DonationBadge.cdc      # NFT badge contract
+│       └── BadgeClaiming.cdc      # Anonymous badge claiming
 ├── frontend/                      # Frontend application
 │   ├── src/
 │   │   ├── components/            # React components
@@ -182,15 +201,12 @@ zk-event-funding/
 │   └── public/                    # Static assets
 ├── backend/                       # Backend services
 │   ├── api/                       # API routes
-│   └── services/                  # Service integrations
-│       ├── multiBaas.js           # MultiBaas integration
-│       └── zircuit.js             # Zircuit integration
-├── scripts/                       # Deployment and utility scripts
-│   ├── deploy.js                  # Contract deployment script
-│   └── verify.js                  # ZK verification script
+│   └── services/
+│       ├── zircuit.js             # Zircuit integration
+│       └── flow.js                # Flow integration
 ├── docs/                          # Documentation
-│   ├── api.md                     # API documentation
-│   └── zkp.md                     # ZK proof documentation
+│   ├── zkp.md                     # ZK proof documentation
+│   └── flow.md                    # Flow integration docs
 └── README.md                      # This file
 ```
 
