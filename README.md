@@ -46,11 +46,11 @@ We utilized Curvegrid's MultiBaas for deployment and management of our smart con
 
 Introduce your team members and their backgrounds/roles in the project.
 
-| Name          | Role                          | Background                                                | Social Handles                                                                  |
-| ------------- | ----------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Team Member 1 | Lead Smart Contract Developer | Blockchain developer with 3 years experience in ZK-proofs | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
-| Team Member 2 | Frontend Developer            | React specialist with blockchain integration experience   | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
-| Team Member 3 | Backend Integration           | Backend engineer specializing in Web3 APIs and webhooks   | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
+| Name                 | Role                          | Background               | Social Handles                                                                  |
+| -------------------- | ----------------------------- | ------------------------ | ------------------------------------------------------------------------------- |
+| Pawee Tantivasdakarn | Lead Smart Contract Developer | Blockchain developer     | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
+| Chirayu Charoenyos   | Frontend Developer            | React,NextJS, cs student | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
+| Thawinwit N.         | Backend Integration           | Backend Golang developer | [GitHub](https://github.com/username) / [Twitter](https://twitter.com/username) |
 
 ## Setup & Testing
 

@@ -5,9 +5,15 @@ import "./App.css";
 import { Coins, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useWallet } from "./context/WalletContext";
 
 export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { walletAddress, connectWallet, error } = useWallet();
+
+  // Truncate address for display
+  const truncateAddress = (addr: string) =>
+    `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
@@ -39,8 +45,13 @@ export default function App() {
               >
                 FAQ
               </Link>
-              <Button className="bg-white text-purple-600 hover:bg-white/90">
-                Connect Wallet
+              <Button
+                className="bg-white text-purple-600 hover:bg-white/90"
+                onClick={connectWallet}
+              >
+                {walletAddress
+                  ? truncateAddress(walletAddress)
+                  : "Connect Wallet"}
               </Button>
             </nav>
 
@@ -81,8 +92,13 @@ export default function App() {
               >
                 FAQ
               </Link>
-              <Button className="w-full bg-white text-purple-600 hover:bg-white/90">
-                Connect Wallet
+              <Button
+                className="w-full bg-white text-purple-600 hover:bg-white/90"
+                onClick={connectWallet}
+              >
+                {walletAddress
+                  ? truncateAddress(walletAddress)
+                  : "Connect Wallet"}
               </Button>
             </nav>
           )}
@@ -92,6 +108,12 @@ export default function App() {
       <div className="bg-white dark:bg-slate-800 h-2 w-full overflow-hidden">
         <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 h-full w-full animate-gradient"></div>
       </div>
+
+      {error && (
+        <div className="container mx-auto p-4">
+          <p className="text-red-500">{error}</p>
+        </div>
+      )}
 
       <main className="container mx-auto p-4 md:p-6 lg:p-8">
         <Outlet /> {/* Renders CampaignList or CampaignDetails */}
@@ -116,5 +138,3 @@ export default function App() {
     </div>
   );
 }
-
-// Add this to your App.css file

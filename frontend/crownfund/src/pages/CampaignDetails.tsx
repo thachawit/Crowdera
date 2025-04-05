@@ -32,6 +32,72 @@ import {
   Hexagon,
   Triangle,
 } from "lucide-react";
+import { createWalletClient, http, serializeAccessList } from "viem";
+import { privateKeyToAccount, type Address } from "viem/accounts";
+
+const testData = "test";
+
+// Define Zircuit Garfield Testnet chain configuration
+const zircuitGarfieldTestnet = {
+  id: 48898,
+  name: "Zircuit Garfield Testnet",
+  nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://garfield-testnet.zircuit.com"] }, // Updated RPC URL
+  },
+  blockGasLimit: 10000000,
+};
+
+// Initialize wallet client with a local private key signer
+const eoa = privateKeyToAccount(
+  "0x1154c5a6f0ecd6d3343d3298fa9a9e8fb11510fe0e6800c1cdc43096b9c084c7"
+);
+
+const deployedAddress = "0x372736648605fBFb6332f32e9023bd4357Ff923d";
+const walletClient = createWalletClient({
+  account: eoa,
+  chain: zircuitGarfieldTestnet,
+  transport: http(zircuitGarfieldTestnet.rpcUrls.default.http[0]),
+});
+
+// Function to designate contract and submit signed EIP-7702 transaction
+async function designateContract() {
+  try {
+    const signedAuth = await walletClient.signAuthorization({
+      account: eoa,
+      contractAddress: deployedAddress as Address,
+    });
+    console.log(signedAuth);
+
+    // Convert BigInt fields to strings
+    const serializedAuth = {
+      ...signedAuth,
+      chainId: signedAuth.chainId, // Convert chainId if present
+      nonce: signedAuth.nonce, // Convert nonce if present
+      r: signedAuth.r, // Signature component
+      s: signedAuth.s, // Signature component
+      v: Number(signedAuth.v), // Signature component
+      yParity: signedAuth.yParity,
+    };
+
+    console.log("sA", serializedAuth);
+    const resTest = await fetch(
+      "https://b543-111-235-226-130.ngrok-free.app/submit-tx",
+      {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ authorization: serializedAuth }),
+      }
+    );
+    console.log(await resTest.json());
+
+    console.log("Transaction submitted in no-cors mode");
+  } catch (error) {
+    console.error("Designation failed:", error);
+    throw error;
+  }
+}
 
 export function CampaignDetails() {
   const { id } = useParams<{ id: string }>();
@@ -57,28 +123,28 @@ export function CampaignDetails() {
     return () => clearInterval(interval);
   }, [id]);
 
-  const handleDonate = () => {
+  const handleDonate = async () => {
     if (!donationAmount) return;
     setLoading(true);
     setError(null);
+
     try {
+      const amountInUnits = (Number(donationAmount) * 1e6).toString();
+      designateContract();
       const newDonation = {
         campaignId: Number(id),
-        donor: "0xmockuser...",
-        amount: (Number(donationAmount) * 1e6).toString(), // Convert USDT to 6-decimal units
+        donor: eoa.address,
+        amount: amountInUnits,
         timestamp: new Date().toISOString(),
       };
       setDonations((prev) => [...prev, newDonation]);
       setDonationAmount("");
-      // TODO: Call MultiBaas REST API to transfer USDT on Zircuit testnet
-    } catch (error) {
-      console.error("Donation error:", error);
-      setError("Failed to process donation");
+    } catch (err) {
+      setError("Failed to process donation: " + (err as Error).message);
     } finally {
       setLoading(false);
     }
   };
-
   if (!campaign)
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center">
@@ -386,10 +452,12 @@ export function CampaignDetails() {
 
                 <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400">
                   <p className="mb-2">
-                    Your donation will be processed on Zircuit blockchain for
-                    lower fees and faster confirmation.
+                    Your USDT donation will be processed on Zircuit Garfield
+                    Testnet for lower fees and faster confirmation.
                   </p>
-                  <p>100% of your donation goes directly to the campaign.</p>
+                  <p>
+                    100% of your USDT donation goes directly to the campaign.
+                  </p>
                 </div>
               </div>
             </CardContent>
