@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {Test, console} from "forge-std/Test.sol";
 import {CampaignManager, Campaign} from "../src/CampaignManager.sol";
 import {BatchCallAndSponsor} from "../src/BatchCallAndSponsor.sol";
+import {CrowderaToken} from "../src/CrowderaToken.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
@@ -12,6 +13,7 @@ import {Vm} from "forge-std/Vm.sol";
 contract CampagnManagerTest is Test {
     CampaignManager public campaignManager;
     BatchCallAndSponsor public implementation;
+    CrowderaToken public nft;
 
     address USDT = 0x46dDa6a5a559d861c06EC9a95Fb395f5C3Db0742;
 
@@ -28,10 +30,11 @@ contract CampagnManagerTest is Test {
 
     function setUp() public {
         // string memory url = vm.rpcUrl("zircuit_testnet");
-        vm.createSelectFork("zircuit_testnet");
-        campaignManager = new CampaignManager(USDT);
+        vm.createSelectFork("zircuit");
+        nft = new CrowderaToken(address(this));
+        campaignManager = new CampaignManager(USDT, address(nft));
         implementation = new BatchCallAndSponsor();
-        // donateImpl = new DonateImpl(address(campaignManager), BOB);
+        nft.transferOwnership(address(campaignManager));
     }
 
     function test_donate() public {
