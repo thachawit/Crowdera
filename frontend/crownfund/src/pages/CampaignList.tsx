@@ -1,4 +1,5 @@
-import { Link, useLoaderData } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -8,46 +9,69 @@ import {
 } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ArrowRight, Target, Coins } from "lucide-react";
-import { Campaign } from "../types";
-import { useState, useEffect } from "react";
-import { fetchCampaigns } from "../lib/api";
+import { createPublicClient, http } from "viem";
+import { zircuitGarfieldTestnet } from "../chains";
+import { campaignContractAddress, campaignAbi } from "../lib/contract";
+
+interface Campaign {
+  id: bigint;
+  name: string;
+  target: bigint;
+  raised: bigint;
+  receiver: string;
+  deadline: bigint;
+}
 
 export function CampaignList() {
-  const loaderData = useLoaderData();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const publicClient = createPublicClient({
+    chain: zircuitGarfieldTestnet,
+    transport: http(zircuitGarfieldTestnet.rpcUrls.default.http[0]),
+  });
 
   useEffect(() => {
-    const loadCampaigns = async () => {
+    async function fetchCampaignsFromChain() {
+      setLoading(true);
+      setError(null);
+
       try {
-        // Try to use loader data first
-        if (
-          loaderData &&
-          typeof loaderData === "object" &&
-          "campaigns" in loaderData
-        ) {
-          setCampaigns((loaderData as { campaigns: Campaign[] }).campaigns);
-        } else {
-          // Fallback to direct API call if loader data is not available
-          const data = await fetchCampaigns();
-          setCampaigns(data);
-        }
-      } catch (error) {
-        console.error("Failed to load campaigns:", error);
-        // Set empty array as fallback
+        const campaignData = (await publicClient.readContract({
+          address: campaignContractAddress,
+          abi: campaignAbi,
+          functionName: "allCampaigns",
+        })) as Campaign[];
+
+        setCampaigns(campaignData);
+      } catch (err) {
+        console.error("Failed to load campaigns:", err);
+        setError(
+          "Failed to fetch campaigns from the blockchain: " +
+            (err as Error).message
+        );
         setCampaigns([]);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    loadCampaigns();
-  }, [loaderData]);
+    fetchCampaignsFromChain();
+  }, []);
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p className="text-red-600">{error}</p>
       </div>
     );
   }
@@ -72,17 +96,18 @@ export function CampaignList() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {campaigns.map((campaign) => {
-            // Calculate percentage raised
-            const goalAmount = Number(campaign.goal) / 1e6;
-            const raisedAmount = Number(campaign.totalRaised) / 1e6;
+            const goalAmount = Number(campaign.target) / 1e6;
+            const raisedAmount = Number(campaign.raised) / 1e6;
             const percentRaised = Math.min(
               Math.round((raisedAmount / goalAmount) * 100),
               100
             );
+            const isActive =
+              new Date(Number(campaign.deadline) * 1000) > new Date();
 
             return (
               <Card
-                key={campaign.id}
+                key={campaign.id.toString()}
                 className="overflow-hidden transition-all duration-300 hover:shadow-lg border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700"
               >
                 <CardHeader className="pb-2 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -125,42 +150,22 @@ export function CampaignList() {
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 space-y-2">
-                    <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                      Chain Distribution
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-white dark:bg-slate-700 rounded-md p-2 shadow-sm">
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          Zircuit
-                        </div>
-                        <div className="font-semibold">
-                          {(
-                            Number(campaign.chainBreakdown.zircuit) / 1e6
-                          ).toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-slate-700 rounded-md p-2 shadow-sm">
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          Optimism
-                        </div>
-                        <div className="font-semibold">
-                          {(
-                            Number(campaign.chainBreakdown.optimism) / 1e6
-                          ).toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="bg-white dark:bg-slate-700 rounded-md p-2 shadow-sm">
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          Polygon
-                        </div>
-                        <div className="font-semibold">
-                          {(
-                            Number(campaign.chainBreakdown.polygon) / 1e6
-                          ).toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                    <span>Receiver</span>
+                    <span className="font-mono">
+                      {campaign.receiver.slice(0, 6)}...
+                      {campaign.receiver.slice(-4)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                    <span>Deadline</span>
+                    <span>
+                      {new Date(
+                        Number(campaign.deadline) * 1000
+                      ).toLocaleDateString()}
+                      ({isActive ? "Active" : "Expired"})
+                    </span>
                   </div>
                 </CardContent>
 

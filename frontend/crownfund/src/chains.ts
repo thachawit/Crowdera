@@ -9,8 +9,8 @@ export const zircuitGarfieldTestnet = {
     symbol: "ETH",
   },
   rpcUrls: {
-    default: { http: ["https://garfield.zircuit.com"] },
-    public: { http: ["https://garfield.zircuit.com"] },
+    default: { http: ["https://garfield-testnet.zircuit.com/"] },
+    public: { http: ["https://garfield-testnet.zircuit.com/"] },
   },
   blockExplorers: {
     default: { name: "Zircuit Explorer", url: "https://explorer.zircuit.com" },

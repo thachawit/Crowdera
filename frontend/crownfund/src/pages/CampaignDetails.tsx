@@ -20,132 +20,259 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { mockCampaigns, mockDonationEvents } from "../lib/mockData";
+import { ArrowLeft, Target, Coins, Clock, Users } from "lucide-react";
 import {
-  ArrowLeft,
-  Target,
-  Coins,
-  Clock,
-  Users,
-  TrendingUp,
-  Zap,
-  Hexagon,
-  Triangle,
-} from "lucide-react";
-import { createWalletClient, http, serializeAccessList } from "viem";
-import { privateKeyToAccount, type Address } from "viem/accounts";
+  createWalletClient,
+  custom,
+  createPublicClient,
+  http,
+  encodeFunctionData,
+} from "viem";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useWallet } from "../context/WalletContext";
+import {
+  campaignContractAddress,
+  campaignAbi,
+  mockUsdtContractAddress,
+  mockUsdtAbi,
+} from "../lib/contract";
+import { zircuitGarfieldTestnet } from "../chains";
 
-const testData = "test";
-
-// Define Zircuit Garfield Testnet chain configuration
-const zircuitGarfieldTestnet = {
-  id: 48898,
-  name: "Zircuit Garfield Testnet",
-  nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["https://garfield-testnet.zircuit.com"] }, // Updated RPC URL
-  },
-  blockGasLimit: 10000000,
-};
-
-// Initialize wallet client with a local private key signer
-const eoa = privateKeyToAccount(
-  "0x1154c5a6f0ecd6d3343d3298fa9a9e8fb11510fe0e6800c1cdc43096b9c084c7"
-);
-
-const deployedAddress = "0x372736648605fBFb6332f32e9023bd4357Ff923d";
-const walletClient = createWalletClient({
-  account: eoa,
-  chain: zircuitGarfieldTestnet,
-  transport: http(zircuitGarfieldTestnet.rpcUrls.default.http[0]),
-});
-
-// Function to designate contract and submit signed EIP-7702 transaction
-async function designateContract() {
+async function approveAndDonate(
+  campaignId: number,
+  amountInUnits: string,
+  walletClient: any
+) {
   try {
-    const signedAuth = await walletClient.signAuthorization({
-      account: eoa,
-      contractAddress: deployedAddress as Address,
+    const approveTx = await walletClient.signTransaction({
+      chain: zircuitGarfieldTestnet,
+      to: mockUsdtContractAddress,
+      value: 0n,
+      data: encodeFunctionData({
+        abi: mockUsdtAbi,
+        functionName: "approve",
+        args: [campaignContractAddress, BigInt(amountInUnits)],
+      }),
+      gas: 100000n,
+      maxFeePerGas: 1000000000n,
+      maxPriorityFeePerGas: 1000000000n,
     });
-    console.log(signedAuth);
 
-    // Convert BigInt fields to strings
-    const serializedAuth = {
-      ...signedAuth,
-      chainId: signedAuth.chainId, // Convert chainId if present
-      nonce: signedAuth.nonce, // Convert nonce if present
-      r: signedAuth.r, // Signature component
-      s: signedAuth.s, // Signature component
-      v: Number(signedAuth.v), // Signature component
-      yParity: signedAuth.yParity,
-    };
-
-    console.log("sA", serializedAuth);
-    const resTest = await fetch(
+    const approveRes = await fetch(
       "https://b543-111-235-226-130.ngrok-free.app/submit-tx",
       {
         method: "POST",
-        mode: "cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ authorization: serializedAuth }),
+        body: JSON.stringify({ signedTx: approveTx }),
       }
     );
-    console.log(await resTest.json());
+    if (!approveRes.ok) throw new Error("Approval failed");
 
-    console.log("Transaction submitted in no-cors mode");
+    const authorization = await walletClient.signAuthorization({
+      contractAddress: campaignContractAddress,
+      chainId: zircuitGarfieldTestnet.id,
+      nonce: 0n,
+    });
+
+    const donateTx = await walletClient.signTransaction({
+      chain: zircuitGarfieldTestnet,
+      to: campaignContractAddress,
+      value: 0n,
+      data: encodeFunctionData({
+        abi: campaignAbi,
+        functionName: "donate",
+        args: [BigInt(campaignId), BigInt(amountInUnits)],
+      }),
+      gas: 1000000n,
+      type: "eip7702",
+      authorizationList: [authorization],
+      maxFeePerGas: 1000000000n,
+      maxPriorityFeePerGas: 1000000000n,
+    });
+
+    const donateRes = await fetch(
+      "https://b543-111-235-226-130.ngrok-free.app/submit-tx",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signedTx: donateTx }),
+      }
+    );
+
+    if (!donateRes.ok) throw new Error("Donation failed");
+    const { txHash } = await donateRes.json();
+    return { txHash };
   } catch (error) {
-    console.error("Designation failed:", error);
+    console.error("Transaction failed:", error);
     throw error;
   }
 }
 
+interface Campaign {
+  id: bigint;
+  name: string;
+  target: bigint;
+  raised: bigint;
+  receiver: string;
+  deadline: bigint;
+}
+
+interface Donation {
+  campaignId: number;
+  donor: string;
+  amount: bigint;
+  timestamp: string;
+}
+
 export function CampaignDetails() {
-  const { id } = useParams<{ id: string }>();
-  const campaign = mockCampaigns.find((c) => c.id === Number(id));
+  const { id: paramId } = useParams<{ id: string }>();
+  const campaignId = paramId
+    ? isNaN(parseInt(paramId, 10)) || parseInt(paramId, 10) <= 0
+      ? 0
+      : parseInt(paramId, 10)
+    : 0;
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [donations, setDonations] = useState<Donation[]>([]);
   const [donationAmount, setDonationAmount] = useState("");
-  const [donations, setDonations] = useState(
-    mockDonationEvents.filter((d) => d.campaignId === Number(id))
-  );
-  const [loading, setLoading] = useState(false);
+  const [usdtBalance, setUsdtBalance] = useState<bigint>(0n);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulate Webhook updates (mocked)
+  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { connectWallet } = useWallet();
+
+  const walletClient = isConnected
+    ? createWalletClient({
+        account: address as `0x${string}`,
+        chain: zircuitGarfieldTestnet,
+        transport: custom(window.ethereum!),
+      })
+    : null;
+
+  const publicClient = createPublicClient({
+    chain: zircuitGarfieldTestnet,
+    transport: http(zircuitGarfieldTestnet.rpcUrls.default.http[0]),
+  });
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      const newDonation = {
-        campaignId: Number(id),
-        donor: `0x${Math.random().toString(16).slice(2, 6)}...`,
-        amount: "50000000", // 50 USDT
-        timestamp: new Date().toISOString(),
-      };
-      setDonations((prev) => [...prev, newDonation]);
-    }, 10000); // Every 10s for demo
-    return () => clearInterval(interval);
-  }, [id]);
+    async function fetchCampaignData() {
+      if (isNaN(campaignId) || campaignId <= 0) {
+        setError("Invalid campaign ID");
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+
+      try {
+        const campaignData = (await publicClient.readContract({
+          address: campaignContractAddress,
+          abi: campaignAbi,
+          functionName: "campaigns",
+          args: [BigInt(campaignId)],
+        })) as [bigint, string, bigint, bigint, string, bigint];
+        console.log("Campaign data:", campaignData); // Debug raw data
+        if (campaignData[0] === 0n && campaignData[1] === "") {
+          setCampaign(null); // No campaign found
+        } else {
+          setCampaign({
+            id: campaignData[0],
+            name: campaignData[1],
+            target: campaignData[2],
+            raised: campaignData[3],
+            receiver: campaignData[4],
+            deadline: campaignData[5],
+          });
+        }
+
+        if (isConnected && address) {
+          const balance = (await publicClient.readContract({
+            address: mockUsdtContractAddress,
+            abi: mockUsdtAbi,
+            functionName: "balanceOf",
+            args: [address as `0x${string}`],
+          })) as bigint;
+          setUsdtBalance(balance);
+        }
+
+        const donationResponse = await fetch(
+          `https://b543-111-235-226-130.ngrok-free.app/donations?campaignId=${campaignId}`
+        );
+        if (donationResponse.ok) {
+          const donationData = await donationResponse.json();
+          setDonations(
+            donationData.map((d: any) => ({
+              campaignId: campaignId,
+              donor: d.donor,
+              amount: BigInt(d.amount),
+              timestamp: d.timestamp,
+            }))
+          );
+        } else {
+          setDonations([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch campaign data:", err);
+        setError("Failed to fetch campaign data: " + (err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCampaignData();
+  }, [campaignId, isConnected, address]);
 
   const handleDonate = async () => {
-    if (!donationAmount) return;
+    if (!donationAmount || !isConnected || !walletClient) return;
     setLoading(true);
     setError(null);
 
     try {
       const amountInUnits = (Number(donationAmount) * 1e6).toString();
-      designateContract();
+      if (BigInt(amountInUnits) > usdtBalance)
+        throw new Error("Insufficient USDT balance");
+
+      const { txHash } = await approveAndDonate(
+        campaignId,
+        amountInUnits,
+        walletClient
+      );
       const newDonation = {
-        campaignId: Number(id),
-        donor: eoa.address,
-        amount: amountInUnits,
+        campaignId: campaignId,
+        donor: address!,
+        amount: BigInt(amountInUnits),
         timestamp: new Date().toISOString(),
       };
       setDonations((prev) => [...prev, newDonation]);
+      setUsdtBalance((prev) => prev - BigInt(amountInUnits));
       setDonationAmount("");
+      alert(`Donation successful! Transaction hash: ${txHash}`);
     } catch (err) {
       setError("Failed to process donation: " + (err as Error).message);
     } finally {
       setLoading(false);
     }
   };
-  if (!campaign)
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!campaign) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center">
         <div className="text-4xl font-bold text-slate-300 mb-4">
@@ -162,23 +289,20 @@ export function CampaignDetails() {
         </Link>
       </div>
     );
+  }
 
-  // Calculate percentage raised
-  const goalAmount = Number(campaign.goal) / 1e6;
-  const raisedAmount = Number(campaign.totalRaised) / 1e6;
+  const goalAmount = Number(campaign.target) / 1e6;
+  const raisedAmount = Number(campaign.raised) / 1e6;
   const percentRaised = Math.min(
     Math.round((raisedAmount / goalAmount) * 100),
     100
   );
-
-  // Calculate total donations
   const totalDonations = donations.length;
-
-  // Get latest donation time
   const latestDonation =
     donations.length > 0
       ? new Date(donations[donations.length - 1].timestamp)
       : null;
+  const isActive = new Date(Number(campaign.deadline) * 1000) > new Date();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -203,7 +327,9 @@ export function CampaignDetails() {
                 <Target className="h-5 w-5 mr-2 text-purple-600" />
                 Campaign Overview
               </CardTitle>
-              <CardDescription>Campaign ID: {campaign.id}</CardDescription>
+              <CardDescription>
+                Campaign ID: {campaign.id.toString()}
+              </CardDescription>
             </CardHeader>
 
             <CardContent className="pt-6">
@@ -239,6 +365,24 @@ export function CampaignDetails() {
                       {percentRaised}% of goal reached
                     </div>
                   </div>
+
+                  <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                    <span>Receiver</span>
+                    <span className="font-mono">
+                      {campaign.receiver.slice(0, 6)}...
+                      {campaign.receiver.slice(-4)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                    <span>Deadline</span>
+                    <span>
+                      {new Date(
+                        Number(campaign.deadline) * 1000
+                      ).toLocaleDateString()}
+                      ({isActive ? "Active" : "Expired"})
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -268,69 +412,6 @@ export function CampaignDetails() {
                           : "N/A"}
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-slate-200 dark:border-slate-700">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
-                Chain Distribution
-              </CardTitle>
-              <CardDescription>
-                Funds raised across different blockchains
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/10 rounded-lg p-4 text-center">
-                  <div className="flex justify-center mb-2">
-                    <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full">
-                      <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                    Zircuit
-                  </div>
-                  <div className="font-bold text-lg">
-                    {(Number(campaign.chainBreakdown.zircuit) / 1e6).toFixed(2)}{" "}
-                    USDT
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 rounded-lg p-4 text-center">
-                  <div className="flex justify-center mb-2">
-                    <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-full">
-                      <Triangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    </div>
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                    Optimism
-                  </div>
-                  <div className="font-bold text-lg">
-                    {(Number(campaign.chainBreakdown.optimism) / 1e6).toFixed(
-                      2
-                    )}{" "}
-                    USDT
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/10 rounded-lg p-4 text-center">
-                  <div className="flex justify-center mb-2">
-                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
-                      <Hexagon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                    Polygon
-                  </div>
-                  <div className="font-bold text-lg">
-                    {(Number(campaign.chainBreakdown.polygon) / 1e6).toFixed(2)}{" "}
-                    USDT
                   </div>
                 </div>
               </div>
@@ -377,7 +458,8 @@ export function CampaignDetails() {
                           className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                         >
                           <TableCell className="font-mono text-sm">
-                            {donation.donor}
+                            {donation.donor.slice(0, 6)}...
+                            {donation.donor.slice(-4)}
                           </TableCell>
                           <TableCell className="text-right font-medium text-purple-600 dark:text-purple-400">
                             {(Number(donation.amount) / 1e6).toFixed(2)}
@@ -407,11 +489,33 @@ export function CampaignDetails() {
 
             <CardContent className="pt-6">
               <div className="space-y-6">
+                {!isConnected ? (
+                  <Button onClick={() => connectWallet()} className="w-full">
+                    Connect Wallet
+                  </Button>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-600">
+                      Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      USDT Balance: {(Number(usdtBalance) / 1e6).toFixed(2)}
+                    </p>
+                    <Button
+                      onClick={() => disconnect()}
+                      className="w-full mb-4"
+                    >
+                      Disconnect
+                    </Button>
+                  </>
+                )}
+
                 {error && (
                   <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm">
                     {error}
                   </div>
                 )}
+
                 <div className="space-y-2">
                   <label
                     htmlFor="amount"
@@ -427,7 +531,7 @@ export function CampaignDetails() {
                       value={donationAmount}
                       onChange={(e) => setDonationAmount(e.target.value)}
                       className="pl-8"
-                      disabled={loading}
+                      disabled={loading || !isActive}
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                       $
@@ -443,7 +547,7 @@ export function CampaignDetails() {
                       size="sm"
                       className="flex-1"
                       onClick={() => setDonationAmount(amount.toString())}
-                      disabled={loading}
+                      disabled={loading || !isActive}
                     >
                       ${amount}
                     </Button>
@@ -453,24 +557,27 @@ export function CampaignDetails() {
                 <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400">
                   <p className="mb-2">
                     Your USDT donation will be processed on Zircuit Garfield
-                    Testnet for lower fees and faster confirmation.
+                    Testnet.
                   </p>
                   <p>
-                    100% of your USDT donation goes directly to the campaign.
+                    100% of your donation goes directly to the campaign
+                    receiver.
                   </p>
                 </div>
               </div>
             </CardContent>
 
-            <CardFooter className="border-t border-slate-200 dark:border-slate-700 pt-4">
-              <Button
-                onClick={handleDonate}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                disabled={!donationAmount || loading}
-              >
-                {loading ? "Processing..." : "Donate Now"}
-              </Button>
-            </CardFooter>
+            {isConnected && (
+              <CardFooter className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <Button
+                  onClick={handleDonate}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  disabled={!donationAmount || loading || !isActive}
+                >
+                  {loading ? "Processing..." : "Donate Now"}
+                </Button>
+              </CardFooter>
+            )}
           </Card>
 
           <Card className="border-slate-200 dark:border-slate-700 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
