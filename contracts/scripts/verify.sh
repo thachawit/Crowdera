@@ -1,0 +1,2 @@
+# forge verify-contract --verifier-url https://explorer.garfield-testnet.zircuit.com/api/contractVerifyHardhat <deployed-contract-address> <source-file>:<contract-name> --root . --etherscan-api-key <ZIRCUIT_API_KEY>
+forge verify-contract --verifier-url https://explorer.garfield-testnet.zircuit.com/api/contractVerifyHardhat 0x703037BEfA9E3A74981C5e683D6fd5EA088594A8 MockUSD --root . --etherscan-api-key FDAE1A6B127CC89DD136E778C96832DB0E
