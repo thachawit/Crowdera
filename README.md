@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # Crowdera: Anonymous funding event Platform
-=======
-# Crowdera ZK-Enhanced Event Funding Platform
->>>>>>> 05cead4 (edit readme)
 
 ![Anonymous Donations with Maximum Cap](./cover.png)
 
