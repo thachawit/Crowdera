@@ -9,11 +9,11 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {Vm} from "forge-std/Vm.sol";
 
-contract CounterTest is Test {
+contract CampagnManagerTest is Test {
     CampaignManager public campaignManager;
     BatchCallAndSponsor public implementation;
 
-    address USDC = 0x3b952c8C9C44e8Fe201e2b26F6B2200203214cfF;
+    address USDT = 0x46dDa6a5a559d861c06EC9a95Fb395f5C3Db0742;
 
     // Alice's address and private key (EOA with no initial contract code).
     address payable ALICE = payable(0x70997970C51812dc3A010C7d01b50e0d17dc79C8);
@@ -29,7 +29,7 @@ contract CounterTest is Test {
     function setUp() public {
         // string memory url = vm.rpcUrl("zircuit_testnet");
         vm.createSelectFork("zircuit_testnet");
-        campaignManager = new CampaignManager(USDC);
+        campaignManager = new CampaignManager(USDT);
         implementation = new BatchCallAndSponsor();
         // donateImpl = new DonateImpl(address(campaignManager), BOB);
     }
@@ -47,8 +47,8 @@ contract CounterTest is Test {
         Campaign memory campaign = campaigns[0];
         vm.startPrank(ALICE);
         deal(ALICE, 1 ether);
-        deal(USDC, ALICE, donateAmount);
-        console.log(IERC20(USDC).balanceOf(ALICE));
+        deal(USDT, ALICE, donateAmount);
+        console.log(IERC20(USDT).balanceOf(ALICE));
 
         // Alice signs a delegation allowing `implementation` to execute transactions on her behalf.
         Vm.SignedDelegation memory signedDelegation = vm.signDelegation(address(implementation), ALICE_PK);
@@ -69,7 +69,7 @@ contract CounterTest is Test {
 
         // USDT transfer
         calls[0] = BatchCallAndSponsor.Call({
-            to: USDC,
+            to: USDT,
             value: 0,
             data: abi.encodeCall(IERC20.transfer, (address(campaignManager), 100))
         });
@@ -97,7 +97,7 @@ contract CounterTest is Test {
         BatchCallAndSponsor(ALICE).execute(calls, signature);
         vm.stopPrank();
 
-        assertEq(IERC20(USDC).balanceOf(ALICE), 0);
-        assertEq(IERC20(USDC).balanceOf(RECEIVIER), donateAmount);
+        assertEq(IERC20(USDT).balanceOf(ALICE), 0);
+        assertEq(IERC20(USDT).balanceOf(RECEIVIER), donateAmount);
     }
 }
