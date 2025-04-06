@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 /**
  * @title BatchCallAndSponsor
@@ -19,7 +20,7 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
  *
  * Replay protection is achieved by using a nonce that is included in the signed message.
  */
-contract BatchCallAndSponsor {
+contract BatchCallAndSponsor is ERC721Holder {
     using ECDSA for bytes32;
 
     /// @notice A nonce used for replay protection.
