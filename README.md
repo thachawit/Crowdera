@@ -30,6 +30,7 @@ We integrated Zircuit to implement our secure donation platform:
 - Used Zircuit for the primary smart contract deployment where campaign creation and donations occur
 - Created smart contract logic that automatically stops accepting donations once a campaign's funding goal is reached
 - Leveraged Zircuit's blockchain for seamless wallet interactions, providing a smooth user experience
+- Mints NFT badges for successful donations
 - Integrated a refund mechanism for cases where funds need to be returned
 
 Our donation flow works as follows:
@@ -43,10 +44,12 @@ Our donation flow works as follows:
 
 We utilized the Flow blockchain to create and distribute commemorative NFT badges to donors:
 
-- Implemented a Flow smart contract that mints unique NFT badges for successful donations
-- Created a secure bridge between Zircuit (for donations) and Flow (for NFT rewards)
-- Used Flow's efficient resource-oriented programming model to create a gas-efficient NFT minting process
-- Implemented various badge designs that reflect different donation levels and campaigns
+- Used Flow for the primary smart contract deployment where campaign creation and donations occur
+- Not support EIP
+- Created smart contract logic that automatically stops accepting donations once a campaign's funding goal is reached
+- Leveraged Zircuit's blockchain for seamless wallet interactions, providing a smooth user experience
+- Mints NFT badges for successful donations
+- Integrated a refund mechanism for cases where funds need to be returned
 
 The Flow integration works as follows:
 
@@ -113,11 +116,7 @@ Working with Zircuit for our donation platform was a rewarding experience:
 - Smart contract implementation was flexible enough to support our funding cap feature
 
 **Challenges:**
-
-- Initial setup required learning the platform's specifics
-- Testing smart contracts thoroughly required building custom test utilities
 - Some edge cases required additional error handling
-- Implementing the partial donation acceptance/refund mechanism required creative solutions
 
 Overall, Zircuit provided a solid foundation for our donation system and would be recommended for projects requiring strong functionality with good UX.
 
@@ -127,18 +126,16 @@ Integrating with Flow blockchain for NFT badges was straightforward and efficien
 
 **Wins:**
 
-- Cadence's resource-oriented programming model made implementing NFT logic intuitive
 - Flow's transaction model allowed for efficient batch minting of NFTs
 - Low transaction fees made issuing badges to all donors economically viable
 - Strong documentation and examples accelerated our development process
 - The Flow community provided helpful support when we encountered integration challenges
 
 **Challenges:**
+- Initial setup required learning the platform's specifics
 
-- Bridging between Zircuit and Flow required careful design
-- Ensuring a smooth cross-chain user experience required extensive testing
 
-Flow proved to be an excellent choice for our NFT badge system due to its efficiency, low costs, and developer-friendly environment.
+Flow proved to be an excellent choice for our both our donation system and NFT badge due to its efficiency, low costs, and developer-friendly environment.
 
 ## Demo
 
@@ -150,9 +147,9 @@ Our demo showcases the complete user journey through the Crowdera platform:
 4. **NFT Badge Minting**: Observe how donors receive their commemorative NFT badges
 5. **Transparent Progress**: View real-time updates of campaign progress
 
-[![Project Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://youtu.be/YOUR_VIDEO_ID)
+[Project Demo](https://github.com/thachawit/Crowdera/blob/main/demo.mov)
 
-_Click the image above to watch our demo video_
+_Click the link above to download our demo video_
 
 Our demo highlights the key innovations:
 
