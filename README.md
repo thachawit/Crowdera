@@ -33,36 +33,29 @@ We integrated Zircuit to implement our secure donation platform:
 - Mints NFT badges for successful donations
 - Integrated a refund mechanism for cases where funds need to be returned
 
-Our donation flow works as follows:
-
-1. User selects a campaign and donation amount
-2. System processes the donation on Zircuit
-3. Smart contract accepts the donation and updates the campaign status
-4. If the donation would exceed the campaign's goal, it automatically accepts only what's needed and refunds the rest
-
 ### Flow Integration
 
 We utilized the Flow blockchain to create and distribute commemorative NFT badges to donors:
 
 - Used Flow for the primary smart contract deployment where campaign creation and donations occur
-- Not support EIP
+- Not support EIP7702 so the user need to batch transaction and send it to the CampaignManager directly 
 - Created smart contract logic that automatically stops accepting donations once a campaign's funding goal is reached
 - Leveraged Zircuit's blockchain for seamless wallet interactions, providing a smooth user experience
 - Mints NFT badges for successful donations
 - Integrated a refund mechanism for cases where funds need to be returned
 
-The Flow integration works as follows:
-
-1. When a donation is successfully processed on Zircuit, a claim token is generated
-2. The donor can use this token to claim their NFT badge on Flow
-3. The badge serves as both a commemoration of their donation and proof of participation
-4. Each badge contains metadata about the campaign and donation tier
+Our donation works as follows:
+1. User selects a campaign and donation amount
+2. System processes the donation
+3. Smart contract accepts the donation and updates the campaign status
+4. If the donation would exceed the campaign's goal, it automatically accepts only what's needed and refunds the rest
+5. NFT Minted to donator on successfully donated.
 
 ## Team
 
 | Name                 | Role                          | Background                                             | Social Handles                                                                    |
 | -------------------- | ----------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Pawee Tantivasdakarn | Blockchain Developer          | Blockchain developer with 3+ years experience          | [GitHub](https://github.com/mewpawee)
+| Pawee Tantivasdakarn | Blockchain Developer          | Blockchain developer                                   | [GitHub](https://github.com/mewpawee)
 | Chirayu Charoenyos   | Frontend Developer            | React/NextJS specialist, Computer Science student      | [GitHub](https://github.com/poom5741) 
 | Thawinwit N.         | Backend Integration           | Golang developer, Finance Enthusiasm                   | [GitHub](https://github.com/thachawit)
 
@@ -74,32 +67,36 @@ The Flow integration works as follows:
 # Clone the repository
 git clone https://github.com/paweenthx/crowdera.git
 cd crowdera
-
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your configuration settings
 ```
 
-### Development
+### Frontend
 
 ```bash
 # Start the development server
+cd frontend
+npm install
 npm run dev
 
 # The app will be available at http://localhost:3000
 ```
 
-### Deployment
+### Backend
+```bash
+# Build the project
+cd backend
+bun i
+
+# Deploy the web application
+bun run index.ts
+```
+
+### Smart Contract
 
 ```bash
 # Build the project
-npm run build
-
-# Deploy the web application
-npm run deploy
+cd contracts
+forge install
+forge build
 ```
 
 ## Experience & Feedback
