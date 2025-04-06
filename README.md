@@ -2,7 +2,7 @@
 
 ![Donation Platform with Maximum Cap](./cover.png)
 
-> **A transparent donation platform that prevents over-funding of causes by enforcing funding caps on Zircuit and rewards donors with commemorative NFT badges on Flow.**
+> **A transparent donation platform that prevents over-funding of causes by enforcing funding caps with commemorative NFT badges on Zircuit and Flow.**
 
 ## Table of Contents
 
