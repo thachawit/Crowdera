@@ -59,9 +59,9 @@ The Flow integration works as follows:
 
 | Name                 | Role                          | Background                                             | Social Handles                                                                    |
 | -------------------- | ----------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Pawee Tantivasdakarn | Lead Smart Contract Developer | Blockchain developer with 3+ years experience          | [GitHub](https://github.com/paweenthx) / [Twitter](https://twitter.com/paweenthx) |
-| Chirayu Charoenyos   | Frontend Developer            | React/NextJS specialist, Computer Science student      | [GitHub](https://github.com/chiracyou) / [Twitter](https://twitter.com/chiracyou) |
-| Thawinwit N.         | Backend Integration           | Golang developer with blockchain integration expertise | [GitHub](https://github.com/thawinwit) / [Twitter](https://twitter.com/thawinwit) |
+| Pawee Tantivasdakarn | Blockchain Developer          | Blockchain developer with 3+ years experience          | [GitHub](https://github.com/mewpawee)
+| Chirayu Charoenyos   | Frontend Developer            | React/NextJS specialist, Computer Science student      | [GitHub](https://github.com/poom5741) 
+| Thawinwit N.         | Backend Integration           | Golang developer, Finance Enthusiasm                   | [GitHub](https://github.com/thachawit)
 
 ## Setup
 
@@ -147,10 +147,8 @@ Our demo showcases the complete user journey through the Crowdera platform:
 1. **Campaign Creation**: Watch an organizer create a new funding campaign with a specific goal
 2. **Donation Process**: See how donors can contribute to causes they care about
 3. **Funding Cap in Action**: Witness the system automatically handle a donation that would exceed the funding goal
-4. **NFT Badge Minting**: Observe how donors receive their commemorative NFT badges on Flow
-5. **Badge Collection**: See the different badge designs and how they showcase participation
-6. **Transparent Progress**: View real-time updates of campaign progress
-7. **Fund Withdrawal**: See how organizers can withdraw funds once the goal is met
+4. **NFT Badge Minting**: Observe how donors receive their commemorative NFT badges
+5. **Transparent Progress**: View real-time updates of campaign progress
 
 [![Project Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://youtu.be/YOUR_VIDEO_ID)
 
@@ -159,9 +157,9 @@ _Click the image above to watch our demo video_
 Our demo highlights the key innovations:
 
 - Automatic funding cap enforcement
-- Cross-chain NFT badge rewards on Flow
+- NFT badge rewards on donation
 - Badge claiming mechanism
-- Smooth user experience through Zircuit's blockchain
+- Smooth user experience through Zircuit and Flow's blockchain
 
 ## Future Roadmap
 
@@ -179,27 +177,9 @@ While our hackathon submission demonstrates the core functionality, we plan to e
 
 ```
 crowdera/
-├── contracts/
-│   ├── zircuit/                   # Zircuit smart contracts
-│   │   ├── Campaign.sol           # Main campaign contract
-│   │   └── interfaces/            # Contract interfaces
-│   └── flow/                      # Flow smart contracts
-│       ├── DonationBadge.cdc      # NFT badge contract
-│       └── BadgeClaiming.cdc      # Badge claiming
+├── contracts/                     # Smart Contracts
 ├── frontend/                      # Frontend application
-│   ├── src/
-│   │   ├── components/            # React components
-│   │   ├── hooks/                 # Custom React hooks
-│   │   ├── pages/                 # Page components
-│   │   └── utils/                 # Utility functions
-│   └── public/                    # Static assets
 ├── backend/                       # Backend services
-│   ├── api/                       # API routes
-│   └── services/
-│       ├── zircuit.js             # Zircuit integration
-│       └── flow.js                # Flow integration
-├── docs/                          # Documentation
-│   └── flow.md                    # Flow integration docs
 └── README.md                      # This file
 ```
 
